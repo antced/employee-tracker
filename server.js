@@ -28,38 +28,124 @@ const viewTables = () => {
     inquirer
         .prompt(tableList)
         .then((data) => optionPicker(data))
-        .then(() => viewTables());
 };
+
+const askQuestions = (questionType) => {
+    const departmentQs = [{
+        type: 'input',
+        message: 'What is the department name?',
+        name: 'department'
+    }]
+
+    const roleQs = [{
+        type: 'input',
+        message: 'What is the role name?',
+        name: 'name'
+    },
+    {
+        type: 'input',
+        message: 'What is the salary?',
+        name: 'salary'
+    },
+    {
+        type: 'input',
+        message: 'What is the role name?',
+        name: 'salary'
+    }]
+
+    const employeeQs = [{
+        type: 'input',
+        message: 'What is the department name?',
+        name: 'department'
+    }]
+
+    const updateQs = [{
+        type: 'input',
+        message: 'What is the department name?',
+        name: 'department'
+    }]
+
+    if (questionType === 'departments') {
+        inquirer
+        .prompt(departmentQs)
+        .then((data) => insertTable(data))
+    } else if (questionType === 'roles') {
+        inquirer
+        .prompt(roleQs)
+        .then((data) => insertTable(data))
+    } else if (questionType === 'employees') {
+        inquirer
+        .prompt(employeeQs)
+        .then((data) => insertTable(data))
+    } else if (questionType === 'update') {
+        inquirer
+        .prompt(updateQs)
+        .then((data) => updateTable(data))
+    }
+}
+
+function insertTable(table,values) {
+    db.query(`INSERT INTO ${table} (id,name) VALUES (${values})`, function (err, results) {
+        err ? console.log(err) : console.table(results);
+    })
+}
 
 function optionPicker(data) {
     if (data.option === 'View All Departments') {
         db.query(`SELECT * FROM departments`, function (err, results) {
             err ? console.log(err) : console.table(results);
-        })
+        });
+        setTimeout(() => {
+            continueToNext();
+        }, 1);
     } else if (data.option === 'View All Roles') {
         db.query(`SELECT * FROM roles`, function (err, results) {
             err ? console.log(err) : console.table(results);
-        })
+        });
+        setTimeout(() => {
+            continueToNext();
+        }, 1);
     } else if (data.option === 'View All Employees') {
         db.query(`SELECT * FROM employees`, function (err, results) {
             err ? console.log(err) : console.table(results);
-        })
+        });
+        setTimeout(() => {
+            continueToNext();
+        }, 1);
     } else if (data.option === 'Add A Department') {
-        db.query(`INSERT INTO department (id,name) VALUES (${name})`, function (err, results) {
-            err ? console.log(err) : console.table(results);
-        })
+        setTimeout(() => {
+            askQuestions('department');
+        }, 1);
     } else if (data.option === 'Add A Role') {
-        return console.log('adding a role');
+        setTimeout(() => {
+            askQuestions('department');
+        }, 1);
     } else if (data.option === 'Add An Employee') {
-        return console.log('adding an employee');
+        setTimeout(() => {
+            askQuestions('department');
+        }, 1);
     } else if (data.option === 'Update an Employee Role') {
-        return console.log('updating an employee');
+        setTimeout(() => {
+            askQuestions('department');
+        }, 1);
     } else {
-        return console.log('not valid option')
+        setTimeout(() => {
+            askQuestions('department');
+        }, 1);
     }
-    return;
 }
 
-const askQuestions = () => inquirer.prompt
+const continueToNext = () =>
+    inquirer
+        .prompt([
+            {
+                name: "continue",
+                type: "confirm",
+                message: "Want to do anything else?",
+            },
+        ])
+        .then((answer) => {
+            if (answer.continue) return viewTables();
+        });
 
 viewTables();
