@@ -30,122 +30,241 @@ const viewTables = () => {
         .then((data) => optionPicker(data))
 };
 
-const askQuestions = (questionType) => {
-    const departmentQs = [{
-        type: 'input',
-        message: 'What is the department name?',
-        name: 'department'
-    }]
-
-    const roleQs = [{
-        type: 'input',
-        message: 'What is the role name?',
-        name: 'name'
-    },
-    {
-        type: 'input',
-        message: 'What is the salary?',
-        name: 'salary'
-    },
-    {
-        type: 'input',
-        message: 'What is the role name?',
-        name: 'salary'
-    }]
-
-    const employeeQs = [{
-        type: 'input',
-        message: 'What is the department name?',
-        name: 'department'
-    }]
-
-    const updateQs = [{
-        type: 'input',
-        message: 'What is the department name?',
-        name: 'department'
-    }]
-
-    if (questionType === 'departments') {
-        inquirer
-        .prompt(departmentQs)
-        .then((data) => insertTable(data))
-    } else if (questionType === 'roles') {
-        inquirer
-        .prompt(roleQs)
-        .then((data) => insertTable(data))
-    } else if (questionType === 'employees') {
-        inquirer
-        .prompt(employeeQs)
-        .then((data) => insertTable(data))
-    } else if (questionType === 'update') {
-        inquirer
-        .prompt(updateQs)
-        .then((data) => updateTable(data))
-    }
-}
-
-function insertTable(table,values) {
-    db.query(`INSERT INTO ${table} (id,name) VALUES (${values})`, function (err, results) {
-        err ? console.log(err) : console.table(results);
-    })
-}
-
 function optionPicker(data) {
-    if (data.option === 'View All Departments') {
-        db.query(`SELECT * FROM departments`, function (err, results) {
-            err ? console.log(err) : console.table(results);
-        });
-        setTimeout(() => {
-            continueToNext();
-        }, 1);
-    } else if (data.option === 'View All Roles') {
-        db.query(`SELECT * FROM roles`, function (err, results) {
-            err ? console.log(err) : console.table(results);
-        });
-        setTimeout(() => {
-            continueToNext();
-        }, 1);
-    } else if (data.option === 'View All Employees') {
-        db.query(`SELECT * FROM employees`, function (err, results) {
-            err ? console.log(err) : console.table(results);
-        });
-        setTimeout(() => {
-            continueToNext();
-        }, 1);
-    } else if (data.option === 'Add A Department') {
-        setTimeout(() => {
+    const optionPicked = data.option;
+    switch (optionPicked) {
+        case 'View All Departments':
+            db.query(`SELECT * FROM departments`, function (err, results) {
+                if (err) {
+                    console.log(err)
+                } else {
+                    console.table("\n", results);
+                    viewTables();
+                }
+            });
+            break;
+        case 'View All Roles':
+            db.query(`SELECT * FROM roles`, function (err, results) {
+                if (err) {
+                    console.log(err)
+                } else {
+                    console.table("\n", results);
+                    viewTables();
+                }
+            });
+            break;
+        case 'View All Employees':
+            // TODO: Do a join to show employees and roles and managers
+            db.query(`SELECT * FROM employees`, function (err, results) {
+                if (err) {
+                    console.log(err)
+                } else {
+                    console.table("\n", results);
+                    viewTables();
+                }
+            });
+            break;
+        case 'Add A Department':
             askQuestions('department');
-        }, 1);
-    } else if (data.option === 'Add A Role') {
-        setTimeout(() => {
-            askQuestions('department');
-        }, 1);
-    } else if (data.option === 'Add An Employee') {
-        setTimeout(() => {
-            askQuestions('department');
-        }, 1);
-    } else if (data.option === 'Update an Employee Role') {
-        setTimeout(() => {
-            askQuestions('department');
-        }, 1);
-    } else {
-        setTimeout(() => {
-            askQuestions('department');
-        }, 1);
+            break;
+        case 'Add A Role':
+            askQuestions('role');
+            break;
+        case 'Add An Employee':
+            askQuestions('employee');
+            break;
+        case 'Update an Employee Role':
+            askQuestions('update');
+            break;
     }
 }
 
-const continueToNext = () =>
-    inquirer
-        .prompt([
-            {
-                name: "continue",
-                type: "confirm",
-                message: "Want to do anything else?",
-            },
-        ])
-        .then((answer) => {
-            if (answer.continue) return viewTables();
+const askQuestions = (questionType) => {
+    // db.query(`SELECT first_name,last_name FROM employees`, function (err, results) {
+    //     err ? console.log(err) : managerList = results.map(function (obj) { return obj.name; });
+    // });
+    if (questionType === 'department') {
+        const departmentQs = [{
+            type: 'input',
+            message: 'What is the department name?',
+            name: 'department'
+        }]
+        inquirer
+            .prompt(departmentQs)
+            .then((data) => insertTable(data, 'departments'))
+
+    } else if (questionType === 'role') {
+        db.query(`SELECT name FROM departments`, function (err, results) {
+            if (err) {
+                console.log(err)
+            } else {
+                const departmentList = results.map(function (obj) { return obj.name; });
+                const roleQs = [{
+                    type: 'input',
+                    message: 'What is the role name?',
+                    name: 'role'
+                },
+                {
+                    type: 'input',
+                    message: 'What is the salary?',
+                    name: 'salary'
+                },
+                {
+                    type: 'list',
+                    message: 'What is the department?',
+                    choices: departmentList,
+                    name: 'department'
+                }]
+                inquirer
+                    .prompt(roleQs)
+                    .then((data) => insertTable(data, 'roles'))
+            }
         });
+    } else if (questionType === 'employee') {
+        // TODO get managers to show up here too
+        db.query(`SELECT title FROM roles`, function (err, results) {
+            if (err) {
+                console.log(err)
+            } else {
+                const roleList = results.map(function (obj) { return obj.title; });
+                console.log(roleList);
+                db.query(`SELECT first_name,last_name FROM employees WHERE manager_id = 0`, function (err, results) {
+                    if (err) {
+                        console.log(err)
+                    } else {
+                        const managerList = results.map(function (obj) { return obj.first_name + " " + obj.last_name; });
+                        const employeeQs = [{
+                            type: 'input',
+                            message: 'What is the employee\'s first name?',
+                            name: 'firstName'
+                        },
+                        {
+                            type: 'input',
+                            message: 'What is the employee\'s last name?',
+                            name: 'lastName'
+                        },
+                        {
+                            type: 'list',
+                            message: 'What is the employee\'s role?',
+                            choices: roleList,
+                            name: 'role'
+                        },
+                        {
+                            type: 'list',
+                            message: 'Who is the employee\'s manager?',
+                            choices: managerList,
+                            name: 'manager'
+                        }]
+                        inquirer
+                            .prompt(employeeQs)
+                            .then((data) => insertTable(data, 'employees'))
+                    }
+                })
+            }
+        });
+    } else if (questionType === 'update') {
+        db.query(`SELECT first_name,last_name FROM employees`, function (err, results) {
+            if (err) {
+                console.log(err)
+            } else {
+                const employeeList = results.map(function (obj) { return obj.first_name + " " + obj.last_name; });
+                console.log(employeeList);
+                db.query(`SELECT title FROM roles`, function (err, results) {
+                    if (err) {
+                        console.log(err)
+                    } else {
+                        const roleList = results.map(function (obj) { return obj.title });
+                        console.log(roleList);
+                        const updateQs = [{
+                            type: 'list',
+                            message: 'Which employee\'s role do you want to update?',
+                            choices: employeeList,
+                            name: 'employee'
+                        },
+                        {
+                            type: 'list',
+                            message: 'Which role do you want to assign the select employee?',
+                            choices: roleList,
+                            name: 'role'
+                        }]
+                        inquirer
+                            .prompt(updateQs)
+                            .then((data) => updateTable(data))
+                    }
+                })
+            }
+        });
+    }
+}
+
+function insertTable(data, table) {
+    // TODO: turn these into switch cases
+    if (table === 'departments') {
+        db.query(`INSERT INTO departments (name) VALUES (?)`, [data.department], function (err, results) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.table(`Added ${data.department} to the database.`);
+                viewTables();
+            }
+        });
+    } else if (table === 'roles') {
+        db.query('SELECT id FROM departments WHERE name = ?', [data.department], function (err, results) {
+            if (err) {
+                console.log(err);
+            } else {
+                const departmentId = results[0].id;
+                console.log(departmentId),
+                    db.query(`INSERT INTO roles (title,salary,department_id) VALUES (?,?,?)`, [data.role, data.salary, departmentId], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.table(`Added ${data.role} to the database.`);
+                            viewTables();
+                        }
+                    });
+            }
+        })
+
+    } else if (table === 'employees') {
+        // select manager name and get return their id and name
+        db.query('SELECT id FROM roles WHERE title = ?', [data.role], function (err, results) {
+            if (err) {
+                console.log(err);
+            } else {
+                const roleId = results[0].id;
+                managerFirst = data.manager.split(" ")[0];
+                managerLast = data.manager.split(" ")[1];
+                db.query('SELECT id FROM employees WHERE first_name = ? && last_name = ?', [managerFirst,managerLast], function (err, results) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        const managerId = results[0].id;
+                        db.query('INSERT INTO employees (first_name,last_name,role_id,manager_id) VALUES (?,?,?,?)', [data.firstName, data.lastName, roleId, managerId], function (err, results) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                console.table(`Added ${data.firstName} ${data.lastName} to the database.`);
+                                viewTables();
+                            }
+                        })
+                    }
+                })
+            }
+        })
+
+    } else if (table === 'update') {
+        db.query(`INSERT INTO ${table} (employee) VALUES ("${data.employee}")`, function (err, results) {
+            err ? console.log(err) : console.table(results);
+        });
+        setTimeout(() => {
+            viewTables();
+        }, 10);
+    }
+}
+
+function updateTable(data) {
+    console.log("hit updatetable");
+}
 
 viewTables();
