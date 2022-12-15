@@ -1,17 +1,21 @@
 USE employeetracker_db;
 
 INSERT INTO departments (name)
-VALUES ("Software Engineer"),
-       ("Web Dev"),
-       ("Javascripter");
+VALUES ("Sales"),
+       ("Engineering"),
+       ("Finance"),
+       ("Legal");
 
 INSERT INTO roles (title,salary,department_id)
-VALUES ("Senior Dev",55000,4),
-       ("Intern Dev",55000,2),
-       ("Junior Dev",55000,3),
-       ("Manager",100000,1);
+VALUES ("Salesperson",55000,1),
+       ("Software Engineer",85000,2),
+       ("Accountant",65000,3),
+       ("Lawyer",100000,4);
+
        
 INSERT INTO employees (first_name,last_name,role_id,manager_id)
-VALUES ("Amira", "Afzal",2,2),
-       ("Christoper", "Lee",3,1),
-       ("Software", "Manager",1,NULL);
+VALUES ("Mr.", "Manager",2,NULL),
+       ("Amira", "Afzal",1,1),
+       ("Christoper", "Lee",2,1),
+       ("Kim","Tim",3,1);
+       

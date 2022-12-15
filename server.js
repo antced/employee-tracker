@@ -44,7 +44,7 @@ function optionPicker(data) {
             });
             break;
         case 'View All Roles':
-            db.query(`SELECT * FROM roles`, function (err, results) {
+            db.query(`SELECT roles.id,roles.title,departments.name AS department,roles.salary FROM roles JOIN departments ON roles.department_id = departments.id`, function (err, results) {
                 if (err) {
                     console.log(err)
                 } else {
@@ -54,8 +54,9 @@ function optionPicker(data) {
             });
             break;
         case 'View All Employees':
-            // TODO: Do a join to show employees and roles and managers
-            db.query(`SELECT * FROM employees`, function (err, results) {
+            //CONCAT(`first_name`,' ',`last_name`)
+            //E.employees M WHERE E.manager_id = M.id 
+            db.query("SELECT e.id,e.first_name,e.last_name,title,departments.name AS department,salary,CONCAT(m.first_name,' ',m.last_name) AS manager FROM employees e JOIN roles ON e.role_id = roles.id JOIN departments ON roles.department_id = departments.id LEFT JOIN employees m ON e.manager_id = m.id", function (err, results) {
                 if (err) {
                     console.log(err)
                 } else {
@@ -80,9 +81,6 @@ function optionPicker(data) {
 }
 
 const askQuestions = (questionType) => {
-    // db.query(`SELECT first_name,last_name FROM employees`, function (err, results) {
-    //     err ? console.log(err) : managerList = results.map(function (obj) { return obj.name; });
-    // });
     if (questionType === 'department') {
         const departmentQs = [{
             type: 'input',
@@ -127,8 +125,7 @@ const askQuestions = (questionType) => {
                 console.log(err)
             } else {
                 const roleList = results.map(function (obj) { return obj.title; });
-                console.log(roleList);
-                db.query(`SELECT first_name,last_name FROM employees WHERE manager_id = 0`, function (err, results) {
+                db.query(`SELECT first_name,last_name FROM employees WHERE manager_id IS NULL`, function (err, results) {
                     if (err) {
                         console.log(err)
                     } else {
@@ -168,13 +165,11 @@ const askQuestions = (questionType) => {
                 console.log(err)
             } else {
                 const employeeList = results.map(function (obj) { return obj.first_name + " " + obj.last_name; });
-                console.log(employeeList);
                 db.query(`SELECT title FROM roles`, function (err, results) {
                     if (err) {
                         console.log(err)
                     } else {
                         const roleList = results.map(function (obj) { return obj.title });
-                        console.log(roleList);
                         const updateQs = [{
                             type: 'list',
                             message: 'Which employee\'s role do you want to update?',
@@ -189,7 +184,7 @@ const askQuestions = (questionType) => {
                         }]
                         inquirer
                             .prompt(updateQs)
-                            .then((data) => updateTable(data))
+                            .then((data) => insertTable(data, 'update'))
                     }
                 })
             }
@@ -214,15 +209,14 @@ function insertTable(data, table) {
                 console.log(err);
             } else {
                 const departmentId = results[0].id;
-                console.log(departmentId),
-                    db.query(`INSERT INTO roles (title,salary,department_id) VALUES (?,?,?)`, [data.role, data.salary, departmentId], function (err, results) {
-                        if (err) {
-                            console.log(err);
-                        } else {
-                            console.table(`Added ${data.role} to the database.`);
-                            viewTables();
-                        }
-                    });
+                db.query(`INSERT INTO roles (title,salary,department_id) VALUES (?,?,?)`, [data.role, data.salary, departmentId], function (err, results) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        console.table(`Added ${data.role} to the database.`);
+                        viewTables();
+                    }
+                });
             }
         })
 
@@ -235,7 +229,7 @@ function insertTable(data, table) {
                 const roleId = results[0].id;
                 managerFirst = data.manager.split(" ")[0];
                 managerLast = data.manager.split(" ")[1];
-                db.query('SELECT id FROM employees WHERE first_name = ? && last_name = ?', [managerFirst,managerLast], function (err, results) {
+                db.query('SELECT id FROM employees WHERE first_name = ? AND last_name = ?', [managerFirst, managerLast], function (err, results) {
                     if (err) {
                         console.log(err);
                     } else {
@@ -254,17 +248,31 @@ function insertTable(data, table) {
         })
 
     } else if (table === 'update') {
-        db.query(`INSERT INTO ${table} (employee) VALUES ("${data.employee}")`, function (err, results) {
-            err ? console.log(err) : console.table(results);
-        });
-        setTimeout(() => {
-            viewTables();
-        }, 10);
+        db.query('SELECT id FROM roles WHERE title = ?', [data.role], function (err, results) {
+            if (err) {
+                console.log(err);
+            } else {
+                const roleId = results[0].id;
+                updateFirst = data.employee.split(" ")[0];
+                updateLast = data.employee.split(" ")[1];
+                db.query('SELECT first_name,last_name FROM employees WHERE first_name = ? AND last_name = ?', [updateFirst, updateLast], function (err, results) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        const managerId = results[0].id;
+                        db.query('UPDATE employees SET role_id = ? WHERE first_name = ? AND last_name = ?', [roleId, updateFirst, updateLast], function (err, results) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                console.table(`Changed ${updateFirst} ${updateLast} role to ${data.role} in the database.`);
+                                viewTables();
+                            }
+                        })
+                    }
+                })
+            }
+        })
     }
-}
-
-function updateTable(data) {
-    console.log("hit updatetable");
 }
 
 viewTables();
